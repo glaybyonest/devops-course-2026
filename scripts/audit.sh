@@ -31,5 +31,11 @@ check "Сертификат действует не менее ${CERT_MIN_DAYS} 
 WW=$(sudo find /var/www/devops-site -perm -o+w 2>/dev/null | wc -l | tr -d ' ')
 check "Нет файлов, доступных для записи всем" "0" "$WW"
 check "Права ключа TLS равны 600" "600" "$(sudo stat -c '%a' /etc/ssl/private/devops.key)"
+echo "[5] Контейнеризация"
+check "Служба docker активна" "active" "$(systemctl is-active docker)"
+check "Контейнер СУБД в состоянии healthy" "healthy" "$(docker inspect -f '{{.State.Health.Status}}' app-db-1 2>/dev/null)"
+BAD=$(ss -tlnH | awk '{print $4}' | grep -E ':(5000|5432)$' | grep -v '^127\.0\.0\.1:' | wc -l | tr -d ' ')
+check "Порты 5000 и 5432 только на 127.0.0.1" "0" "$BAD"
+check "Права файла .env равны 600" "600" "$(stat -c '%a' ~/app/.env 2>/dev/null)"
 echo "Пройдено: $PASS, не пройдено: $FAIL"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

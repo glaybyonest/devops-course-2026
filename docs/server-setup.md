@@ -71,3 +71,14 @@ sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 - Срок действия: 365 дней, поле SAN — `DNS:devops.local`.
 - Порты: 80 (перенаправление на HTTPS), 443 (HTTPS, TLS 1.2/1.3).
 - Журналы: `/var/log/nginx/devops-site.access.log`, `/var/log/nginx/devops-site.error.log`.
+
+## 9. Контейнеризация
+
+- Способ установки Docker Engine: официальный репозиторий `download.docker.com` (ключ в `/etc/apt/keyrings/docker.gpg`), пакеты `docker-ce`, `docker-ce-cli`, `containerd.io`, `docker-buildx-plugin`, `docker-compose-plugin`. Версия Docker Engine — 29.9.3, Docker Compose — v5.7.0. Пакет `docker.io` не использовался.
+- Участники группы `docker`: учётная запись `devops`.
+- Расположение проекта на сервере: `/home/devops/app` (`Dockerfile`, `app.py`, `requirements.txt`, `docker-compose.yml`, `.env`).
+- Файл `.env`: `/home/devops/app/.env`, владелец `devops`, права 600; в репозиторий не входит, шаблон — `app/.env.example`.
+- Публикуемые порты и адреса: приложение — `127.0.0.1:5000` (только петлевой интерфейс); порт СУБД 5432 не публикуется.
+- Именованные тома: `app_db_data` — данные PostgreSQL, сохраняются при `docker compose down` и удаляются при `docker compose down -v`.
+- Конфигурация обратного прокси-сервера: в блоке HTTPS файла `/etc/nginx/sites-available/devops-site` добавлено расположение `location /app/` с `proxy_pass http://127.0.0.1:5000/` и заголовками `Host`, `X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto`.
+- Снимок состояния: `05-docker-compose`.
