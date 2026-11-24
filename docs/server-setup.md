@@ -82,3 +82,37 @@ sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 - Именованные тома: `app_db_data` — данные PostgreSQL, сохраняются при `docker compose down` и удаляются при `docker compose down -v`.
 - Конфигурация обратного прокси-сервера: в блоке HTTPS файла `/etc/nginx/sites-available/devops-site` добавлено расположение `location /app/` с `proxy_pass http://127.0.0.1:5000/` и заголовками `Host`, `X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto`.
 - Снимок состояния: `05-docker-compose`.
+## 10. Ansible
+
+Проект автоматизации расположен в каталоге `ansible/` репозитория `devops-course-2026`
+(ветка `feature/ansible`, PR в `main`).
+
+**Узлы.** Управляющий узел — хостовая система (Cygwin, ansible-core 2.16.14, коллекции
+ansible.posix 1.6.2, community.docker 4.5.0, community.general 9.5.0). Управляемый узел —
+VM `devops-vm`, Ubuntu Server 24.04, адрес Host-only 192.168.56.102, SSH на порту 22.
+
+**Inventory.** `ansible/inventory/bootstrap.ini` — первичный доступ: пользователь `student`,
+пароль SSH и `sudo` (первый запуск). `ansible/inventory/prod.ini` — рабочий доступ:
+пользователь `devops`, ключ `~/.ssh/devops_vm`, `sudo` без пароля. Пароли в файлы не записаны.
+
+**Роли и ответственность.** base — проверка платформы, базовые пакеты, официальный
+репозиторий и Docker Engine; ssh — пользователь `devops`, открытый ключ, `sudoers` без
+пароля, hardening SSH и UFW; nginx — установка Nginx, reverse proxy на 127.0.0.1:5000,
+handlers проверки и reload; app — загрузка образа по SHA, контейнер с публикацией только
+на loopback, health-check.
+
+**Образ.** `ghcr.io/glaybyonest/devops-ci-app`, тег — полный SHA зелёного коммита
+`9045ac8d786725d893446ac651d1e2e221777c79` (тег `latest` не используется).
+Порт контейнера 5000, публикация `127.0.0.1:5000`, health endpoint `/health`.
+
+**Команды.**
+
+```
+cd ansible
+ansible-playbook -i inventory/bootstrap.ini site.yml --ask-pass --ask-become-pass
+ansible-playbook site.yml
+ansible-playbook verify.yml
+```
+
+**Аудит.** `verify.yml` не изменяет конфигурацию: проверяет `sshd -T` (запрет паролей и root),
+запущенность контейнера и ответ `/health`; два последовательных запуска дают `changed=0`.

@@ -1,0 +1,7 @@
+---
+ansible_python_interpreter: /usr/bin/python3
+app_image: "ghcr.io/glaybyonest/devops-ci-app"
+app_tag: "9045ac8d786725d893446ac651d1e2e221777c79"
+app_container_name: "devops-ci-app"
+app_host_port: 5000
+app_internal_port: 5000

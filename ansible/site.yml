@@ -1,0 +1,19 @@
+---
+# Play 1 — первичная настройка доступа: пакеты, Docker, пользователь devops и ключ.
+# Handler перезапуска SSH выполняется в конце этого play, когда задачи уже завершены.
+- name: Bootstrap base packages and automation access
+  hosts: vm
+  become: true
+  roles:
+    - base
+    - ssh
+
+# Play 2 — конфигурация под уже созданной учётной записью devops (доступ по ключу).
+- name: Configure web tier and deploy application
+  hosts: vm
+  become: true
+  vars:
+    ansible_user: devops
+  roles:
+    - nginx
+    - app
